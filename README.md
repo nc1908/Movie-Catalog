@@ -4,7 +4,7 @@ This is a simple application written in Spring Boot to allow user to add/edit/de
 
 To run the application please follow these steps:
 
-checkout this repository
+checkout this repository or download as zip
 
 open up a command prompt, navigate to source/repository folder where it contains the pom.xml file
 
