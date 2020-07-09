@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="x-ua-compatible" content="ie=edge">
+		<title>Movie Catalog</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<!-- CSS only -->
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+		<link rel="stylesheet" th:href="@{/css/app.css}"/>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	</head>
+	<body>
+		<main role="main" class="container">
+
+			<div class="template">
+				<h1>Movie Catalog</h1>
+			</div>
+
+			<button class="btn btn-primary btnAdd" onclick=(showModal())>Add</button>
+			<input type="text" class="" id="searchDirectorName" placeholder="Director Name">
+			<label for="searchRating">Rating</label>
+			<select class="" id="searchRating" required>
+				<option>0</option>
+				<option>1</option>
+				<option>2</option>
+				<option>3</option>
+				<option>4</option>
+				<option>5</option>
+			</select>
+			<button id="btnSearch" class="" onclick=(searchMovie())>Search</button>
+			<button id="btnRest" class="" onclick=(resetSearch())>Reset</button>
+
+			<table class="table">
+				<thead class="thead-dark">
+				<tr>
+					<th scope="col">Id</th>
+					<th scope="col">Name</th>
+					<th scope="col">Director</th>
+					<th scope="col">Rating</th>
+					<th scope="col">Actions</th>
+				</tr>
+				</thead>
+				<tbody id="tableBody">
+				</tbody>
+			</table>
+
+			<div id="formModal" class="modal">
+				<div class="modal-content">
+					<input type="text" class="" id="movieId" hidden>
+					<label for="movieName">Movie Name</label>
+					<input type="text" class="" id="movieName" required>
+					<label for="directorName">Director</label>
+					<input type="text" class="" id="directorName" required>
+					<label for="rating">Rating</label>
+					<select class="" id="rating" required>
+						<option>1</option>
+						<option>2</option>
+						<option>3</option>
+						<option>4</option>
+						<option>5</option>
+					</select>
+					<button class="btn btn-small btn-info btnSave" onclick="saveMovie()">save</button>
+					<button class="btn btn-small btn-info btnClose" onclick="closeModal()">close</button>
+				</div>
+			</div>
+		</main>
+
+		<script>
+			document.addEventListener("load", getAllMovies());
+
+			var allMovies = [];
+
+			function searchMovie() {
+				var directorName = document.getElementById("searchDirectorName").value;
+				var rating = document.getElementById("searchRating").value;
+				axios({
+					method: 'post',
+					url: '/api/movie/search',
+					data: {
+						directorNames: directorName ? [directorName] : null,
+						rating: rating > 0 ? rating : null
+					}
+				})
+				.then(function(response) {
+					allMovies = response.data;
+					renderTable(allMovies);
+				});
+			}
+
+			function renderTable(movieList) {
+				var tableBody = document.getElementById("tableBody");
+				var htmlOutput = "";
+				movieList && movieList.forEach(function(movie) {
+					htmlOutput +=
+						'<tr>' +
+						'<td>' + movie.id + '</td>' +
+						'<td>' + movie.name + '</td>' +
+						'<td>' + movie.director + '</td>' +
+						'<td>' + movie.rating + '</td>' +
+						'<td>' +
+						'<button class="btn btn-small btn-info btnEdit" onclick="editMovie(\'' + movie.id + '\')">Edit</button>' +
+						'<button class="btn btn-small btn-danger btnDelete" onclick="deleteMovie(\'' + movie.id+ '\')">Delete</button>' +
+						'</td>' +
+						'</tr>'
+				});
+				tableBody.innerHTML = "";
+				tableBody.innerHTML += htmlOutput;
+			}
+
+			function editMovie(id) {
+				// var selected = [[${movies}]].find(function(movie){
+				var selected = allMovies.find(function(movie){
+					return movie.id == id;
+				});
+				// pre-fill form with data
+				document.getElementById("movieId").value = selected['id'];
+				document.getElementById("movieName").value = selected['name'];
+				document.getElementById("directorName").value = selected['director'];
+				document.getElementById("rating").value = selected['rating'];
+
+				showModal();
+			}
+
+			function getAllMovies() {
+				axios({
+					method: 'get',
+					url: '/api/movie/all'
+				})
+				.then(function(response){
+					allMovies = response.data;
+					renderTable(allMovies);
+				});
+			}
+
+			function resetSearch() {
+				document.getElementById("searchDirectorName").value = "";
+				document.getElementById("searchRating").value = "0";
+				getAllMovies();
+			}
+
+			function saveMovie() {
+				var movieElement = document.getElementById("movieId");
+				var movieId = movieElement ? movieElement.value : undefined;
+				var movieName = document.getElementById("movieName").value;
+				var directorName = document.getElementById("directorName").value;
+				var rating = document.getElementById("rating").value;
+				var isNew = movieId === undefined || movieId === null || movieId === "";
+				axios({
+					method: isNew ? 'post' : 'put',
+					url: isNew ? '/api/movie/save' : '/api/movie/update',
+					data: {
+						id: movieId,
+						name: movieName,
+						director: directorName,
+						rating: rating
+					}
+				})
+				.then(function (response) {
+					var movie = response['data'];
+					if (isNew) {
+						if (allMovies) {
+							allMovies.push(movie);
+						}
+						else {
+							allMovies = [movie];
+						}
+					}
+					else {
+						updateMovieList(movie);
+					}
+					renderTable(allMovies);
+					closeModal();
+				});
+			}
+
+			function updateMovieList(updatedMovie) {
+				var selected = allMovies.find(function(movie){
+					return movie.id == updatedMovie.id;
+				});
+				var index = allMovies.indexOf(selected);
+				allMovies.splice(index, 1, updatedMovie);
+			}
+
+			function closeModal() {
+				var modal = document.getElementById("formModal");
+				modal.style.display = "none";
+				resetForm();
+			}
+
+			function resetForm() {
+				document.getElementById("movieId").value = "";
+				document.getElementById("movieName").value = "";
+				document.getElementById("directorName").value = "";
+				document.getElementById("rating").value = "1";
+			}
+
+			function showModal() {
+				var modal = document.getElementById("formModal");
+				modal.style.display = "block";
+			}
+
+			function deleteMovie(id) {
+				axios({
+					method: 'delete',
+					url: '/api/movie/delete/' + id
+				})
+				.then(function() {
+					var selected = allMovies.find(function(movie){
+						return movie.id == id;
+					});
+					allMovies.splice(allMovies.indexOf(selected), 1);
+					renderTable(allMovies);
+				});
+			}
+
+		</script>
+	</body>
+</html>

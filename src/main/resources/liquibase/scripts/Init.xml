@@ -1,0 +1,46 @@
+<databaseChangeLog
+		xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+		xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext
+				http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd
+				http://www.liquibase.org/xml/ns/dbchangelog
+				http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+
+	<changeSet id="CreateMovieTable" author="Norman Chen">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="Movie" />
+			</not>
+		</preConditions>
+		<createTable tableName="Movie">
+			<column name="Id" type="int(11)" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+			<column name="Name" type="varchar(100)"><constraints nullable="false"/></column>
+			<column name="Rating" type="int(11)"/>
+		</createTable>
+	</changeSet>
+
+	<changeSet id="CreateDirectorTable" author="Norman Chen">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="Director" />
+			</not>
+		</preConditions>
+		<createTable tableName="Director">
+			<column name="Id" type="int(11)" autoIncrement="true"><constraints primaryKey="true" nullable="false"/></column>
+			<column name="Name" type="varchar(100)"><constraints nullable="false"/></column>
+		</createTable>
+	</changeSet>
+
+	<changeSet id="CreateMovieDirectorJoiningTable" author="Norman Chen">
+		<preConditions onFail="MARK_RAN">
+			<not>
+				<tableExists tableName="Movie_Directors" />
+			</not>
+		</preConditions>
+		<createTable tableName="Movie_Directors">
+			<column name="Movie_Id" type="int(11)" />
+			<column name="Director_Id" type="int(11)"/>
+		</createTable>
+	</changeSet>
+
+</databaseChangeLog>
